@@ -1,0 +1,80 @@
+# ============================================================================
+# .gitignore - Raíz del proyecto (PorkyGym)
+# ----------------------------------------------------------------------------
+# Objetivo: que NUNCA se suban a GitHub archivos sensibles o generados.
+# Si algo está aquí, Git lo ignora en TODA la carpeta y sus subcarpetas.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1) Python / Django
+# ----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Artefactos de build de paquetes Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ----------------------------------------------------------------------------
+# 2) Entornos virtuales  (NUNCA se sube: cada quien instala lo suyo con pip)
+# ----------------------------------------------------------------------------
+venv/
+.venv/
+env/
+ENV/
+
+# ----------------------------------------------------------------------------
+# 3) Archivos de entorno .env  (CONTIENEN SECRETOS: SECRET_KEY, contraseñas,
+#    API keys). Se ignoran TODOS los .env... excepto la plantilla de ejemplo.
+# ----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ----------------------------------------------------------------------------
+# 4) Bases de datos y archivos de datos locales
+# ----------------------------------------------------------------------------
+*.sqlite3
+*.db
+db.sqlite3
+*.sqlite3-journal
+
+# ----------------------------------------------------------------------------
+# 5) Salidas de Django
+# ----------------------------------------------------------------------------
+staticfiles/
+media/
+*.log
+logs/
+
+# ----------------------------------------------------------------------------
+# 6) Frontend (carpeta "Fronted" - Vite / React / Node)
+# ----------------------------------------------------------------------------
+node_modules/
+dist/
+build/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# ----------------------------------------------------------------------------
+# 7) Editores de código y sistema operativo
+# ----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------------------------------------------------------------------
+# NOTA: si algún día agregas un secreto por error a Git y lo subes,
+# borrar el .gitignore NO lo borra del historial: cambia la clave/contraseña.
+# ----------------------------------------------------------------------------
