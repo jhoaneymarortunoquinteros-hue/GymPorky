@@ -1,5 +1,6 @@
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -118,9 +119,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Configuración de bloqueo por tiempo (Axes)
-AXES_FAILURE_LIMIT = 5            # Bloquea al 5to intento fallido
-AXES_COOLOFF_TIME = 0.25           # Bloqueo por 15 minutos (0.25 horas)
-AXES_LOCKOUT_BY_COMBINATION_USER_AND_INET = True
+AXES_FAILURE_LIMIT = 3            # Bloquea al 3er intento fallido
+AXES_COOLOFF_TIME = timedelta(minutes=5)      # Bloqueo por 5 minutos (0.25 horas)
+# Bloquear por nombre de usuario, no por IP completa
+AXES_LOCKOUT_PARAMETERS = ["username"]
 
 # Validadores estrictos de contraseña
 # (8 caracteres, Mayúscula, Minúscula, Número, Símbolo).
