@@ -220,8 +220,10 @@ Las plantillas son específicas para cada contexto:
 ## 6. Producción
 
 El workflow [publish-images.yml](./.github/workflows/publish-images.yml) publica
-las imágenes al hacer push a `main`. El Compose de producción no construye
-imágenes ni obtiene secretos desde GitHub Actions.
+las imágenes al hacer push a `main`. El workflow usa `GITHUB_TOKEN` para
+publicarlas; la visibilidad de los paquetes se configura una sola vez desde
+GitHub Packages, no se cambia en cada ejecución. El Compose de producción no
+construye imágenes ni obtiene secretos desde GitHub Actions.
 
 En el servidor, configura las variables indicadas en
 [`.env.production.example`](./.env.production.example) desde el vault o entorno

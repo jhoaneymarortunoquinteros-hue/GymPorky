@@ -56,13 +56,3 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-
-      - name: Make backend package public
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method PATCH /user/packages/container/gymporky-backend/visibility -f visibility=public
-
-      - name: Make frontend package public
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method PATCH /user/packages/container/gymporky-frontend/visibility -f visibility=public
