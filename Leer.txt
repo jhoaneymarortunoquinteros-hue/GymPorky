@@ -1,5 +1,11 @@
+--Crear el entorno virtual
+python -m venv venv     
+
 --Encender el entorno virtual del backend
 .\venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+
 --Activar el backend
 python manage.py runserver
 
@@ -9,6 +15,8 @@ npm run dev
 
 --Administardor Django
 http://127.0.0.1:8000/admin/
+
+docker compose exec backend python manage.py createsuperuser
 
 --Resetar por error de contraseña
 python manage.py axes_reset

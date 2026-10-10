@@ -6,6 +6,21 @@ Plataforma de gestión de gimnasio.
 Este README explica: instalación, acceso por IP local, variables de entorno,
 subida a GitHub y cómo dejarlo listo para producción.
 
+## Docker Compose (desarrollo local)
+
+Desde la raíz del repositorio puedes levantar todo el stack con PostgreSQL, backend y frontend:
+
+```bash
+docker compose up --build
+```
+
+Esto levanta:
+- PostgreSQL en `localhost:5432`
+- Django en `http://localhost:8000`
+- Vite en `http://localhost:3000`
+
+La base de datos se inicializa automáticamente con la migración del backend. Si el backend no encuentra la DB al arrancar, Docker lo esperará hasta que PostgreSQL quede saludable.
+
 ---
 
 ## 1. Estructura del proyecto
