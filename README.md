@@ -11,8 +11,13 @@ subida a GitHub y cómo dejarlo listo para producción.
 Desde la raíz del repositorio puedes levantar todo el stack con PostgreSQL, backend y frontend:
 
 ```bash
+copy .env.example .env
+# Edita .env con tus valores locales.
 docker compose up --build
 ```
+
+En Linux/macOS usa `cp .env.example .env`. El Compose local toma su configuración
+de ese archivo en la raíz; no necesita `Backend/.env` ni `Fronted/.env`.
 
 Esto levanta:
 - PostgreSQL en `localhost:5432`
@@ -37,7 +42,7 @@ proys1-beta32/
 │   ├── requirements.txt        # Dependencias de Python (con versiones fijadas)
 │   ├── .env                    # TU configuración local             ❌ NUNCA se sube
 │   ├── porkygym_backend/
-│   │   ├── settings.py         # Configuración (dotenv, hosts, CORS, SSL)
+│   │   ├── settings.py         # Configuración (dotenv, hosts, CORS, estáticos)
 │   │   └── urls.py             # Rutas raíz        ⚠️ no modificar sin avisar
 │   ├── api/                    # Lógica de la API   ⚠️ no modificar sin avisar
 │   └── venv/                   # Entorno virtual    ❌ NUNCA se sube
@@ -183,91 +188,60 @@ netsh advfirewall firewall add rule name="PorkyGym Vite 3000"   dir=in action=al
 
 ## 5. Variables de entorno
 
-Se definen en `Backend/.env` (desarrollo) y se leen en `settings.py` con
-`python-dotenv`. Copia siempre desde `.env.example`.
+Las plantillas son específicas para cada contexto:
 
-| Variable | Obligatoria | Desarrollo | Producción | Descripción |
-|---|---|---|---|---|
-| `SECRET_KEY` | **Sí** | clave propia | clave **distinta** y larga | Firma de sesiones/tokens. Si se filtra, rótala. |
-| `DEBUG` | No | `True` | `False` | `True` muestra errores detallados (nunca en producción). |
-| `ALLOWED_HOSTS` | No | `*` | `tu-dominio.com` | Hosts válidos. `*` = cualquier IP (dev). Prohibido en prod. |
-| `CORS_ALLOW_ALL_ORIGINS` | No | `True` | `False` | Permite llamadas desde cualquier origen (IP local incluida). |
-| `CORS_ALLOWED_ORIGINS` | No | lista local | `https://tu-dominio.com` | Se usa solo si lo anterior es `False`. Comas. |
-| `CSRF_TRUSTED_ORIGINS` | No | `http://localhost:3000,...` | `https://tu-dominio.com` | Orígenes de confianza para el admin. Con esquema. |
-| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | **Sí** | tus datos locales | credenciales fuertes | PostgreSQL. |
-| `DB_HOST` / `DB_PORT` | No | `localhost` / `5432` | según servidor | Conexión a la BD. |
-| `FRONTEND_URL` | No | `http://localhost:3000` | `https://tu-dominio.com` | Enlaces de recuperación de contraseña. |
-| `BREVO_API_KEY` | No | clave dev | clave prod | Correos de recuperación (API de Brevo). |
-| `BREVO_SENDER_EMAIL` | No | tu correo | `no-reply@dominio.com` | Remitente. |
-| `SECURE_SSL_REDIRECT` | No | `False` | `True` | Redirige todo a HTTPS. |
-| `SESSION_COOKIE_SECURE` / `CSRF_COOKIE_SECURE` | No | `False` | `True` | Cookies solo por HTTPS. |
-| `SECURE_HSTS_SECONDS` | No | `0` | `31536000` | "Solo HTTPS" en el navegador (1 año). |
-| `SECURE_PROXY_SSL_HEADER` | No | `False` | `True` solo con Nginx delante | Indica a Django que confíe en `X-Forwarded-Proto`. |
-| `SECURE_HSTS_INCLUDE_SUBDOMAINS` / `SECURE_HSTS_PRELOAD` | No | `False` | `True` (si aplica) | HSTS avanzado. `False` si algún subdominio no tiene HTTPS. |
+- [`.env.example`](./.env.example): variables del Compose local. Cópiala como
+  `.env` en la raíz. Compose configura Django, PostgreSQL, Brevo y la URL de
+  API que usa Vite. Dentro de Docker, el host de PostgreSQL es `postgres`;
+  el Compose fija ese host y el puerto interno `5432`.
+- [`Backend/.env.example`](./Backend/.env.example): configuración para ejecutar
+  Django directamente fuera de Compose. En ese caso `DB_HOST=localhost` y
+  `DB_PORT=5432` corresponden a PostgreSQL local.
+- [`Fronted/.env.example`](./Fronted/.env.example): `VITE_API_URL` al ejecutar
+  Vite directamente en el host. En Compose local, `VITE_API_URL` viene de la
+  plantilla raíz.
+- [`.env.production.example`](./.env.production.example): referencia para las
+  variables de runtime del Compose de producción. En el servidor, el vault o
+  el orquestador debe inyectarlas; GitHub Actions solo publica las imágenes.
 
-Frontend (`Fronted/.env`):
-
-| Variable | Obligatoria | Descripción |
-|---|---|---|
-| `VITE_API_URL` | No | URL base de la API. Ej.: `http://192.168.1.10:8000/api` |
+| Variable | Local Compose | Producción Compose | Uso |
+|---|---|---|---|
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD` | `.env` raíz | vault/entorno del servidor | Creación y conexión a PostgreSQL. |
+| `SECRET_KEY` | `.env` raíz | vault/entorno del servidor | Firma de Django y JWT. |
+| `DEBUG` | `.env` raíz | Fijado a `True` en el Compose actual | Modo de depuración de Django. |
+| `FRONTEND_URL` | `.env` raíz | vault/entorno del servidor | Enlaces de recuperación. |
+| `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` | `.env` raíz | Opcionales; vault/entorno del servidor | Envío de correos de recuperación. |
+| `VITE_API_URL` | `.env` raíz | `/api` al compilar la imagen | URL base pública de la API para el navegador. |
+| `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS` | Django usa valores locales por defecto | vault/entorno del servidor | Hosts y orígenes aceptados en producción. |
+| `IMAGE_TAG`, `HTTP_PORT` | No se usan | Opcionales; por defecto `latest` y `80` | Selección de imágenes y puerto publicado. |
 
 ---
 
 ## 6. Producción
 
-> 📖 **Guía completa paso a paso:** [`deploy/README.md`](deploy/README.md)
-> (Nginx + certbot + Gunicorn + systemd + backups + actualizaciones).
->
-> Archivos de soporte:
-> | Archivo | Para qué |
-> |---|---|
-> | `deploy/gunicorn.conf.py` | Servidor WSGI (bind, workers, logs) |
-> | `deploy/porkygym.service` | Servicio de systemd (`systemctl restart porkygym`) |
-> | `deploy/nginx-porkygym.conf` | Proxy inverso, HTTPS y estáticos |
-> | `.env.production.example` | Plantilla de variables de producción |
+El workflow [publish-images.yml](./.github/workflows/publish-images.yml) publica
+las imágenes al hacer push a `main`. El Compose de producción no construye
+imágenes ni obtiene secretos desde GitHub Actions.
 
-### 1. Configurar el entorno
-
-```powershell
-copy .env.production.example Backend\.env
-notepad Backend\.env        # rellena TODOS los valores REALES
-```
-
-### 2. Verificar antes de publicar
-
-```powershell
-cd Backend
-python manage.py check --deploy    # debe quedar SIN warnings
-python manage.py migrate
-python manage.py collectstatic --noinput
-```
-
-### Checklist de seguridad
-
-- [ ] `DEBUG=False`
-- [ ] `SECRET_KEY` nueva, larga y distinta a la de desarrollo
-- [ ] `ALLOWED_HOSTS` solo con dominios reales (**sin `*`**)
-- [ ] `CORS_ALLOW_ALL_ORIGINS=False` + orígenes reales en `CORS_ALLOWED_ORIGINS`
-- [ ] `CSRF_TRUSTED_ORIGINS` con `https://` y el dominio exacto
-- [ ] Credenciales de PostgreSQL fuertes (nada de `postgres/postgres`)
-- [ ] HTTPS activo y bloque `SECURE_*` completo
-- [ ] `python manage.py check --deploy` → **0 warnings**
-- [ ] `Backend/.env` fuera de Git y con permisos restrictivos (`chmod 600 Backend/.env`)
-- [ ] Copia de seguridad de la base de datos programada
-
-### Arrancar con Gunicorn (Linux)
+En el servidor, configura las variables indicadas en
+[`.env.production.example`](./.env.production.example) desde el vault o entorno
+protegido. Si se usa un archivo de entorno, mantenlo fuera del repositorio y
+con permisos restringidos; luego:
 
 ```bash
-cd Backend
-source venv/bin/activate
-pip install gunicorn
-gunicorn porkygym_backend.wsgi:application --bind 127.0.0.1:8000 --workers 3
+docker compose --env-file /ruta/segura/porkygym.env \
+  -f docker-compose.production.yml pull
+docker compose --env-file /ruta/segura/porkygym.env \
+  -f docker-compose.production.yml up -d
 ```
 
-Detrás de **Nginx** (que termina el HTTPS) hay que poner
-`SECURE_PROXY_SSL_HEADER=True` en el `.env` del servidor; si no, Django
-redirigiría en bucle. Como alternativa a Gunicorn en Windows, se puede usar
-`python manage.py runserver 0.0.0.0:8000 --insecure` solo para pruebas.
+PostgreSQL conserva datos en un volumen y el backend aplica migraciones antes
+de iniciar Gunicorn. El Compose actual usa `DEBUG=True`; TLS puede terminar en
+el proxy externo y el tráfico interno entre ese proxy y el Compose puede ser
+HTTP. El frontend enruta `/api/`, `/admin/` y `/static/` hacia el backend.
+Define `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS` y `FRONTEND_URL` con los dominios
+que correspondan. Para despliegues reproducibles, establece `IMAGE_TAG` con
+el SHA publicado en GHCR en vez de usar `latest`.
 
 ---
 
@@ -283,16 +257,10 @@ redirigiría en bucle. Como alternativa a Gunicorn en Windows, se puede usar
 
 ### Integración continua (GitHub Actions)
 
-`.github/workflows/ci.yml` se ejecuta solo en **cada push y cada Pull Request** y deja el check en verde/rojo:
-
-| Job | Qué valida |
-|---|---|
-| **Backend · Django** | `manage.py check`, `makemigrations --check` (sin migraciones pendientes), `migrate` en una PostgreSQL 16 efímera y `manage.py test` |
-| **Frontend · Vite + TypeScript** | `npm ci`, `npm run lint` (`tsc --noEmit`) y `npm run build` |
-
-- **En CI no existe ningún `.env`**: las variables mínimas se inyectan con valores ficticios dentro del workflow (por eso `settings.py` solo exige lo que está documentado en `.env.example`).
-- Si el workflow queda en rojo, **no se hace merge**.
-- El estado se ve en la pestaña **Actions** del repositorio.
+El workflow [publish-images.yml](./.github/workflows/publish-images.yml) publica
+las imágenes del backend y frontend en GHCR al hacer push a `main`, o al
+ejecutarlo manualmente desde GitHub Actions. No es un workflow de pruebas ni
+se ejecuta en cada Pull Request.
 
 ### Primer push
 

@@ -7,8 +7,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
+WHITENOISE_ENABLED = config('WHITENOISE_ENABLED', default=not DEBUG, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in config(
+        'ALLOWED_HOSTS',
+        default='*' if DEBUG else 'localhost,127.0.0.1',
+    ).split(',')
+    if host.strip()
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -39,14 +47,24 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'axes.middleware.AxesMiddleware',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+if WHITENOISE_ENABLED:
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index('django.contrib.sessions.middleware.SessionMiddleware'),
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+    )
 
-# Permitir solicitudes desde el frontend de Vite (puerto 3000) y puerto por defecto 5173
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bool)
+
+# Orígenes locales permitidos para el frontend de Vite.
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+    origin.strip()
+    for origin in config(
+        'CORS_ALLOWED_ORIGINS',
+        default=(
+            'http://localhost:3000,http://127.0.0.1:3000'
+        ),
+    ).split(',')
+    if origin.strip()
 ]
 
 ROOT_URLCONF = 'porkygym_backend.urls'
@@ -99,6 +117,16 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+if WHITENOISE_ENABLED:
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        },
+    }
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

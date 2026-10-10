@@ -1,20 +1,20 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Frontend PorkyGym
 
-# Run and deploy your AI Studio app
+## Desarrollo local
 
-This contains everything you need to run your app locally.
+Para ejecutar Vite directamente, instala dependencias y arranca el servidor:
 
-View your app in AI Studio: https://ai.studio/apps/477824c1-c75c-4943-a01b-39470c080b42
+```bash
+npm install
+npm run dev
+```
 
-## Run Locally
+Vite usa `VITE_API_URL` para conectarse al backend. Copia `.env.example` como
+`.env` si necesitas cambiar la URL; por defecto apunta a
+`http://127.0.0.1:8000/api`.
 
-**Prerequisites:**  Node.js
+## Docker Compose
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+El Compose local usa el `.env` de la raíz para configurar `VITE_API_URL`.
+El Compose de producción compila la aplicación con `/api` y Nginx reenvía
+esa ruta al backend, por lo que el frontend no requiere credenciales.

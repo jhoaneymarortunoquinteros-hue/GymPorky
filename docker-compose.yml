@@ -4,9 +4,9 @@ services:
     container_name: porkygym-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-porky_gym_db}
-      POSTGRES_USER: ${DB_USER:-usuario_postgresql}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234postgre}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -22,18 +22,17 @@ services:
       context: ./Backend
       dockerfile: Dockerfile
     container_name: porkygym-backend
-    env_file:
-      - ./Backend/.env
     environment:
       DB_HOST: postgres
       DB_PORT: "5432"
-      DB_NAME: ${DB_NAME:-porky_gym_db}
-      DB_USER: ${DB_USER:-usuario_postgresql}
-      DB_PASSWORD: ${DB_PASSWORD:-1234postgre}
-      DEBUG: "True"
-      SECRET_KEY: ${SECRET_KEY:-django-insecure-docker-dev-key}
-      FRONTEND_URL: http://localhost:3000
-      ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0,backend,postgres
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DEBUG: ${DEBUG}
+      SECRET_KEY: ${SECRET_KEY}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,10 +49,8 @@ services:
       context: ./Fronted
       dockerfile: Dockerfile
     container_name: porkygym-frontend
-    env_file:
-      - ./Fronted/.env
     environment:
-      VITE_API_URL: http://localhost:8000/api
+      VITE_API_URL: ${VITE_API_URL}
     depends_on:
       - backend
     ports:
